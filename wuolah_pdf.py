@@ -7,7 +7,7 @@ import time
 
 from colorama import Fore
 
-from PyPDF2 import PdfFileReader, PdfFileWriter
+from PyPDF2 import PdfReader, PdfWriter, errors
 
 def get_parser() -> argparse.ArgumentParser:
     """
@@ -61,7 +61,7 @@ def check_args(args):
         args.output = "".join(args.input[0].split(".")[:-1]) + "_merged.pdf"
 
     if os.path.exists(args.output):
-        if(input("The file {} already exists, do you want to overwrite it? [y/N]: "
+        if(input("The file \"{}\" already exists, do you want to overwrite it? [y/N]: "
                  .format(args.output)).lower() != "y"):
             print("\nOperation cancelled by the user")
             print(Fore.RED + "\tExiting..." + Fore.RESET)
@@ -91,9 +91,60 @@ def main():
             if args.verbose:
                 print(f"{Fore.CYAN}[V]{Fore.RESET} Opening the log file...")
             log_file = open(f"./logs/log_{os.getpid()}.txt", "a+")
-            for i in range(int(1e100)):
-                print(i)
+            
+        if args.log:
+            log_file.write(f"\n[{time.strftime('%d/%m/%Y %H:%M:%S')}] Opening the log file...")
+        if args.verbose:
+            print(f"{Fore.CYAN}[V]{Fore.RESET} Opening the output file...")
+
+        with open(args.output, 'wb') as f:
+            f.write(b'')
+            f.close()
+
+        output_file = open(args.output, "wb")
+        writer = PdfWriter(output_file)
+
+        if args.verbose:
+            print(f"{Fore.CYAN}[V]{Fore.RESET} Output file opened")
+        if args.log:
+            log_file.write(f"\n[{time.strftime('%d/%m/%Y %H:%M:%S')}] Output file opened")
+
+        for file in args.input:
+            if args.verbose:
+                print(f"{Fore.CYAN}[V]{Fore.RESET} Opening the input file \"{file}\"...")
+            input_file = open(file, "rb")
+            reader = PdfReader(input_file)
+            if args.verbose:
+                print(f"{Fore.GREEN}[i]{Fore.RESET} Number of pages in \"{file}\": {len(reader.pages)}")
+            for page in reader.pages:
+                writer.add_page(page)
+            input_file.close()
+            if args.verbose:
+                print(f"{Fore.CYAN}[V]{Fore.RESET} Pages from \"{file}\" added to the output file")
+            if args.log:
+                log_file.write(f"\n[{time.strftime('%d/%m/%Y %H:%M:%S')}] Pages from \"{file}\" added to the output file")
+            
+        if args.verbose:
+            print(f"{Fore.CYAN}[V]{Fore.RESET} Closing the output file...")
+        if args.log:
+            log_file.write(f"\n[{time.strftime('%d/%m/%Y %H:%M:%S')}] Closing the output file")
+
+        writer.write(output_file)
+        output_file.close()
+
+        if args.verbose:
+            print(f"{Fore.CYAN}[V]{Fore.RESET} Output file closed")
+        if args.log:
+            log_file.write(f"\n[{time.strftime('%d/%m/%Y %H:%M:%S')}] Output file closed")
+
+        if args.log:
+            if args.verbose:
+                print(f"{Fore.CYAN}[V]{Fore.RESET} Closing the log file...")
             log_file.close()
+            if args.verbose:
+                print(f"{Fore.CYAN}[V]{Fore.RESET} Log file closed")
+
+        print(f"\n{Fore.GREEN}Operation completed successfully{Fore.RESET}")
 
     except KeyboardInterrupt:
         print("\nOperation cancelled by the user")
@@ -105,6 +156,16 @@ def main():
             log_file.write(f"\n[{time.strftime('%d/%m/%Y %H:%M:%S')}] Closing the log file...")
             log_file.close()
         exit(1)
+    except Exception as e:
+        print("\nAn error has occurred")
+        print(Fore.RED + "\tExiting..." + Fore.RESET)
+        if args.log:
+            if args.verbose:
+                print(f"{Fore.CYAN}[V]{Fore.RESET} Closing the log file...")
+            log_file.write(f"\n[{time.strftime('%d/%m/%Y %H:%M:%S')}] An error has occurred")
+            log_file.write(f"\n[{time.strftime('%d/%m/%Y %H:%M:%S')}] Closing the log file...")
+            log_file.close()
+        raise e
 
 
 if __name__ == "__main__":

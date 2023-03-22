@@ -27,7 +27,7 @@ chmod +x wuolah_pdf.py
 
 ## Usage
 
-```bash
+```
 wuolah_pdf.py [-h] [-o OUTPUT] [-r] [-v] [-l] input [input ...]
 
 This program will merge the pdf files that you pass as arguments into one file and will remove the ads from the pdf if you want to
