@@ -28,7 +28,7 @@ def get_parser() -> argparse.ArgumentParser:
     parser.add_argument("-o", "--output", help="Output file name, if not specified it will be the name of the first file with _merged.pdf at the end", required=False)
     parser.add_argument("-r", "--remove-ads", help="Remove the ads from the pdf", action="store_true")
     parser.add_argument("-v", "--verbose", help="Verbose mode, show more info about the process", action="store_true")
-    parser.add_argument("-l", "--log", help="File to save the logs of the operations", action="store_true")
+    parser.add_argument("-l", "--log", help="File to save the logs of the operations", action="store_true") 
     parser.add_argument("input", help="Input file", nargs="+")
 
     return parser
@@ -117,7 +117,8 @@ def main():
             if args.verbose:
                 print(f"{Fore.GREEN}[i]{Fore.RESET} Number of pages in \"{file}\": {len(reader.pages)}")
             for page in reader.pages:
-                writer.add_page(page)
+                if page.extract_text() != "":
+                    writer.add_page(page)
             input_file.close()
             if args.verbose:
                 print(f"{Fore.CYAN}[V]{Fore.RESET} Pages from \"{file}\" added to the output file")
@@ -136,6 +137,19 @@ def main():
             print(f"{Fore.CYAN}[V]{Fore.RESET} Output file closed")
         if args.log:
             log_file.write(f"\n[{time.strftime('%d/%m/%Y %H:%M:%S')}] Output file closed")
+
+        if args.remove_ads:
+            from gulagcleaner.gulagcleaner_extract import deembed
+            if args.verbose:
+                print(f"{Fore.CYAN}[V]{Fore.RESET} Removing the ads from the output file...")
+            if args.log:
+                log_file.write(f"\n[{time.strftime('%d/%m/%Y %H:%M:%S')}] Removing the ads from the output file...")
+            resp = deembed(args.output, True)
+            if not resp["Success"]:
+                print(f"{Fore.RED}Error:{Fore.RESET} {resp['Error']}")
+                log_file.write(f"\n[{time.strftime('%d/%m/%Y %H:%M:%S')}] Closing the log file...")
+                log_file.close()
+                exit(1)
 
         if args.log:
             if args.verbose:
