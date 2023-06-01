@@ -147,8 +147,9 @@ def main():
             resp = deembed(args.output, True)
             if not resp["Success"]:
                 print(f"{Fore.RED}Error:{Fore.RESET} {resp['Error']}")
-                log_file.write(f"\n[{time.strftime('%d/%m/%Y %H:%M:%S')}] Closing the log file...")
-                log_file.close()
+                if args.log:
+                    log_file.write(f"\n[{time.strftime('%d/%m/%Y %H:%M:%S')}] Closing the log file...")
+                    log_file.close()
                 exit(1)
 
         if args.log:
